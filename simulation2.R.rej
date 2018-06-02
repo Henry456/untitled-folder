@@ -1,0 +1,70 @@
+diff a/simulation2.R b/simulation2.R	(rejected hunks)
+@@ -1,33 +1,47 @@
+ set.seed(1)
+ 
++expit=function(x){
++  exp(x)/(1+exp(x))
++}
++
++install.packages("mvtnorm")
++library("mvtnorm")
+ 
+-design.matrixs = function(nrow, ncol, beta.star){
+-  support.index = (beta.star != 0)
+-  support = beta.star[support.index]
+-  X = matrix(runif(nrow*ncol), nrow, ncol)
++design.matrixs = function(nrow, ncol, rho, beta.star){
++  support = (beta.star != 0)
++#  support = beta.star[support.index]
++  X = matrix(0, nrow, ncol) ##initialaztion
++  Sigma=matrix(0,ncol,ncol)
++  Sigma=rho*diag(ncol)+(1-rho)*(rep(1,ncol))%o%(rep(1,ncol))
++  X=rmvtnorm(nrow,mean=rep(0,ncol),sigma=Sigma)
+   X.support = X[, support]
+-  y = X %*% beta.star
++  temp=runif(nrow)
++  y = as.numeric(temp<=expit(X %*% beta.star))
+   #To find W* matrix 
+-  W.star = diag_new(X, beta.star)
+-  #W.star = diag(rep(1, nrow))
+-  #for (i in 1:nrow) {
+-  #  W.star[i,i] = Wfunc(X[i,], beta.star)
+-  #}
+-  #To find C.bar  
+-  C.bar = findCbar(X.support, W.star)
+-  #C.min = Cmin(X.star, W.star)
+-  #a.value = a(X.support, W.star)
+-  #C.bar = Cbar(a.value, C.min)
+-  #To find lambda.max to construct lambda.vector  
+-  lambda.max = findLambdaMax(X, X.support, W.star)
+-  grid.get = grid(lambda.max, 50)
+-  
+-  lambda.hat = algorightm(X, grid.get)
++#   W.star = diag(X%*%beta.star)
++#   #W.star = diag(rep(1, nrow))
++#   #for (i in 1:nrow) {
++#   #  W.star[i,i] = Wfunc(X[i,], beta.star)
++#   #}
++#   #To find C.bar  
++#   C.bar = findCbar(X.support, W.star)
++#   #C.min = Cmin(X.star, W.star)
++#   #a.value = a(X.support, W.star)
++#   #C.bar = Cbar(a.value, C.min)
++#   #To find lambda.max to construct lambda.vector  
++#   lambda.max = findLambdaMax(X, X.support, W.star)
++#   grid.get = grid(lambda.max, 50)
++#   
++#   lambda.hat = algorightm(X, grid.get)
++   return(list(data.frame(y,X),X.support))
+   
+   
+ }
+ 
+-algorithm = function(X, grid){
++algorithm = function(data, grid){
++  data=as.matrix(data)
++  X=data[,-1]
++  y=data[,1]
+   glmnet.fit = glmnet(X, Y, "binomial", lambda = grid)
+   beta.hat.matrix = coef(glmnet.fit, s = grid)
+   N = length(grid)
